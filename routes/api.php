@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,5 +16,19 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware('auth:api',"scope:view-user")->get('/user', function (Request $request) {
+
     return $request->user();
+});
+
+Route::middleware('auth:api')->post('/logout', function (Request $request) {
+    // Revoke access token
+    // => Set oauth_access_tokens.revoked to TRUE (t)
+    $request->user()->token()->revoke();
+
+    // Revoke all of the token's refresh tokens
+    // => Set oauth_refresh_tokens.revoked to TRUE (t)
+    $refreshTokenRepository = app('Laravel\Passport\RefreshTokenRepository');
+    $refreshTokenRepository->revokeRefreshTokensByAccessTokenId($request->user()->token()->id);
+
+    return response()->json(['message' => 'User is logout']);
 });
